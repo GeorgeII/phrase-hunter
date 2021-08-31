@@ -1,30 +1,39 @@
 package com.github.georgeii.phrasehunter.service.searcher
 
 import cats.effect.{IO, Resource}
+import cats.implicits._
 
 import java.io.File
 import scala.io.{BufferedSource, Source}
 
 case class Subtitle(number: Int, timestamp: String, text: String)
-case class SubtitleOccurrenceDetails(fileAbsPath: String, phraseId: Int, startTimeMillis: Long, endTimeMillis: Long)
+case class SubtitleOccurrenceDetails(
+                                      fileAbsPath: String,
+                                      phraseId: Int,
+                                      startTimeMillis: Long,
+                                      endTimeMillis: Long,
+                                      text: String
+                                    )
 
 
 class SubtitleSearcher {
 
-  def getSubtitlesWithPhrase(phrase: String): Vector[SubtitleOccurrenceDetails] = {
-    val allSubtitleFilesIO: IO[Vector[File]] = getAllSubtitleFiles()
-
-//    val filesWithOccurrences = for {
-//        subtitleFiles <- allSubtitleFilesIO
-//        file          <- subtitleFiles
-//        indices       <- getIndicesOf(file)
-//      } yield SubtitleOccurrenceDetails(file, indices)
-//
-//    filesWithOccurrences
-    ???
+  def getSubtitlesWithPhraseInAllFiles(phrase: String): IO[Vector[SubtitleOccurrenceDetails]] = {
+    for {
+      vectorOfFiles <- getVectorOfSubtitleFiles()
+      files         <- vectorOfFiles.traverse(file => findPhraseInFile(phrase, file))
+    } yield files.flatten
   }
 
-  def getAllSubtitleFiles(): IO[Vector[File]] = {???}
+  def getVectorOfSubtitleFiles(): IO[Vector[File]] = IO {
+    val filesDirectory = new File("data/")
+
+    if (filesDirectory.exists && filesDirectory.isDirectory) {
+      filesDirectory.listFiles.filter(_.isFile).toVector
+    } else {
+      Vector[File]()
+    }
+  }
 
   def getIndicesOf(file: File): IO[Vector[Int]] = {???}
 
@@ -57,29 +66,28 @@ class SubtitleSearcher {
   }
 
 
-  def findOccurrences(pattern: String, source: String, fileAbsPath: String): Vector[SubtitleOccurrenceDetails] = {
+  def findOccurrencesInParticularFile(pattern: String, source: String, fileAbsPath: String): Vector[SubtitleOccurrenceDetails] = {
     val splitSourceBySeparateSubtitle = source.split("\n\n").toVector
 
     val parsedSubtitles = for {
-      separateSubtitle <- splitSourceBySeparateSubtitle
-      subtitleParts = separateSubtitle.split("\n")
+      separateSubtitleInFile <- splitSourceBySeparateSubtitle
+      subtitleParts = separateSubtitleInFile.split("\n")
     } yield Subtitle(subtitleParts(0).toInt, subtitleParts(1), subtitleParts.drop(2).mkString(" "))
 
-    parsedSubtitles
-      .map { subtitle =>
-        val (startString, endString) = extractTimestampsFromSubtitleString(subtitle.timestamp)
-        val startMillis = convertStringTimeToMillis(startString)
-        val endMillis   = convertStringTimeToMillis(endString)
+    parsedSubtitles.map { subtitle =>
+      val (startString, endString) = extractTimestampsFromSubtitleString(subtitle.timestamp)
+      val startMillis = convertStringTimeToMillis(startString)
+      val endMillis   = convertStringTimeToMillis(endString)
 
-        SubtitleOccurrenceDetails(fileAbsPath, subtitle.number, startMillis, endMillis)
-      }
+      SubtitleOccurrenceDetails(fileAbsPath, subtitle.number, startMillis, endMillis, subtitle.text)
+    }
   }
 
   def findPhraseInFile(phrase: String, file: File): IO[Vector[SubtitleOccurrenceDetails]] = {
     val fileResource = makeReadFileResource(file)
 
     fileResource.use { fileBufferedSource =>
-      IO(findOccurrences(phrase, fileBufferedSource.mkString, file.getAbsolutePath))
+      IO(findOccurrencesInParticularFile(phrase, fileBufferedSource.mkString, file.getAbsolutePath))
     }
   }
 
