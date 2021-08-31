@@ -35,8 +35,6 @@ class SubtitleSearcher {
     }
   }
 
-  def getIndicesOf(file: File): IO[Vector[Int]] = {???}
-
   def makeReadFileResource(file: File): Resource[IO, BufferedSource] = {
     Resource.make {
       IO(Source.fromFile(file))                                  // build
@@ -66,7 +64,7 @@ class SubtitleSearcher {
   }
 
 
-  def findOccurrencesInParticularFile(pattern: String, source: String, fileAbsPath: String): Vector[SubtitleOccurrenceDetails] = {
+  def findOccurrencesInParticularFile(phrase: String, source: String, fileAbsPath: String): Vector[SubtitleOccurrenceDetails] = {
     val splitSourceBySeparateSubtitle = source.split("\n\n").toVector
 
     val parsedSubtitles = for {
@@ -74,7 +72,9 @@ class SubtitleSearcher {
       subtitleParts = separateSubtitleInFile.split("\n")
     } yield Subtitle(subtitleParts(0).toInt, subtitleParts(1), subtitleParts.drop(2).mkString(" "))
 
-    parsedSubtitles.map { subtitle =>
+    val subtitlesThatContainPhrase = parsedSubtitles.filter(_.text.contains(phrase))
+
+    subtitlesThatContainPhrase.map { subtitle =>
       val (startString, endString) = extractTimestampsFromSubtitleString(subtitle.timestamp)
       val startMillis = convertStringTimeToMillis(startString)
       val endMillis   = convertStringTimeToMillis(endString)
