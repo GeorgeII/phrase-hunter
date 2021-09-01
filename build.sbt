@@ -5,6 +5,8 @@ val LogbackVersion = "1.2.3"
 val MunitCatsEffectVersion = "0.13.0"
 
 //val Elastic4sVersion = "7.12.3"
+val PureConfigVersion = "0.16.0"
+val CirisVersion = "2.1.1"
 
 
 lazy val root = (project in file("."))
@@ -25,6 +27,8 @@ lazy val root = (project in file("."))
 
       // my dependencies that I added later.
 //      "com.sksamuel.elastic4s" %% "elastic4s-core" % Elastic4sVersion,
+//      "com.github.pureconfig" %% "pureconfig" % PureConfigVersion,
+      "is.cir" %% "ciris" % CirisVersion,
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.0" cross CrossVersion.full),
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
