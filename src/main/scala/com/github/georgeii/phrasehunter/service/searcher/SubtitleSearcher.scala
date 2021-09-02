@@ -2,7 +2,7 @@ package com.github.georgeii.phrasehunter.service.searcher
 
 import cats.effect.{IO, Resource}
 import cats.implicits._
-import ciris._
+//import ciris._
 
 import java.io.File
 import scala.io.{BufferedSource, Source}
@@ -21,7 +21,7 @@ case class Config(subtitlesDirectory: String)
 
 class SubtitleSearcher {
 
-  lazy val config: ConfigValue[IO, String] = env("subtitles-directory")
+//  lazy val config: ConfigValue[IO, String] = env("subtitles-directory")
 
   def getSubtitlesWithPhraseInAllFiles(phrase: String): IO[Vector[SubtitleOccurrenceDetails]] = {
     for {
@@ -31,8 +31,7 @@ class SubtitleSearcher {
   }
 
   def getVectorOfSubtitleFiles(): IO[Vector[File]] = IO {
-    val directoryName = config.load[IO].
-    val filesDirectory = new File("data/")
+    val filesDirectory = new File("data/subtitles/")
 
     if (filesDirectory.exists && filesDirectory.isDirectory) {
       filesDirectory.listFiles.filter(_.isFile).toVector
