@@ -2,7 +2,6 @@ package com.github.georgeii.phrasehunter.service.searcher
 
 import cats.effect.{IO, Resource}
 import cats.implicits._
-//import ciris._
 
 import java.io.File
 import scala.io.{BufferedSource, Source}
@@ -21,17 +20,19 @@ case class Config(subtitlesDirectory: String)
 
 class SubtitleSearcher {
 
-//  lazy val config: ConfigValue[IO, String] = env("subtitles-directory")
+  val directory = "data/subtitles/"
 
-  def getSubtitlesWithPhraseInAllFiles(phrase: String): IO[Vector[SubtitleOccurrenceDetails]] = {
+  def getSubtitlesWithPhraseInAllFiles(
+                                        phrase: String,
+                                        directory: String = directory): IO[Vector[SubtitleOccurrenceDetails]] = {
     for {
-      vectorOfFiles <- getVectorOfSubtitleFiles()
+      vectorOfFiles <- getVectorOfSubtitleFilesInDirectory(directory)
       files         <- vectorOfFiles.traverse(file => findPhraseInFile(phrase, file))
     } yield files.flatten
   }
 
-  def getVectorOfSubtitleFiles(): IO[Vector[File]] = IO {
-    val filesDirectory = new File("data/subtitles/")
+  def getVectorOfSubtitleFilesInDirectory(directory: String = directory): IO[Vector[File]] = IO {
+    val filesDirectory = new File(directory)
 
     if (filesDirectory.exists && filesDirectory.isDirectory) {
       filesDirectory.listFiles.filter(_.isFile).toVector
@@ -70,11 +71,11 @@ class SubtitleSearcher {
 
 
   def findOccurrencesInParticularFile(phrase: String, source: String, fileAbsPath: String): Vector[SubtitleOccurrenceDetails] = {
-    val splitSourceBySeparateSubtitle = source.split("\n\n").toVector
+    val splitSourceBySeparateSubtitle = source.split("\r\n\r\n").toVector
 
     val parsedSubtitles = for {
       separateSubtitleInFile <- splitSourceBySeparateSubtitle
-      subtitleParts = separateSubtitleInFile.split("\n")
+      subtitleParts          = separateSubtitleInFile.split("\r\n")
     } yield Subtitle(subtitleParts(0).toInt, subtitleParts(1), subtitleParts.drop(2).mkString(" "))
 
     val subtitlesThatContainPhrase = parsedSubtitles.filter(_.text.contains(phrase))
