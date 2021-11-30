@@ -1,9 +1,8 @@
 package com.github.georgeii.phrasehunter.services
 
 import cats.Applicative
-import cats.effect.{ MonadCancel, Resource }
+import cats.effect.{ Resource, Sync }
 import cats.implicits._
-//import cats.syntax.traverse._
 import com.github.georgeii.phrasehunter.models.phrase._
 import com.github.georgeii.phrasehunter.models.{ Subtitle, SubtitleOccurrenceDetails }
 
@@ -15,10 +14,8 @@ trait Subtitles[F[_]] {
 }
 
 object Subtitles {
-  def make[F[_]](
+  def make[F[_]: Sync](
       subtitleStorage: List[File]
-  )(
-      implicit F: MonadCancel[F, Throwable]
   ): Subtitles[F] = {
     new Subtitles[F] {
       override def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]] = {
@@ -27,7 +24,9 @@ object Subtitles {
             val fileResource = makeReadFileResource[F](file)
 
             fileResource.use { bufferedSource =>
-              findOccurrencesInParticularFile(phrase, bufferedSource.mkString, file.getAbsolutePath).pure[F]
+              Applicative[F].pure(
+                findOccurrencesInParticularFile(phrase, bufferedSource.mkString, file.getAbsolutePath)
+              )
             }
           }
           .sequence
@@ -56,13 +55,11 @@ object Subtitles {
     }
   }
 
-  private def makeReadFileResource[F[_]: Applicative](
+  private def makeReadFileResource[F[_]: Sync](
       file: File
   ): Resource[F, BufferedSource] = {
-    Resource.make {
-      Source.fromFile(file).pure[F]
-    } { inBufferedSource: BufferedSource =>
-      inBufferedSource.close().pure[F]
+    Resource.fromAutoCloseable {
+      Applicative[F].pure(Source.fromFile(file))
     }
   }
 
@@ -76,9 +73,9 @@ object Subtitles {
     val parsedSubtitles = for {
       separateSubtitleInFile <- splitSourceBySeparateSubtitle
       subtitleParts = separateSubtitleInFile.split("\r\n")
-    } yield Subtitle(subtitleParts(0).toInt, subtitleParts(1), subtitleParts.drop(2).mkString(" "))
+    } yield Subtitle(subtitleParts(0).toInt, subtitleParts(1), subtitleParts.drop(2).mkString(" ").toLowerCase)
 
-    val subtitlesThatContainPhrase = parsedSubtitles.filter(_.text.contains(phrase))
+    val subtitlesThatContainPhrase = parsedSubtitles.filter(_.text.contains(phrase.toString))
 
     subtitlesThatContainPhrase.map { subtitle =>
       val (startString, endString) = extractTimestampsFromSubtitleString(subtitle.timestamp)
