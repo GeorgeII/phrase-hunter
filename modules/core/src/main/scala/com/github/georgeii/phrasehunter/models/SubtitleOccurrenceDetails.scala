@@ -1,7 +1,7 @@
 package com.github.georgeii.phrasehunter.models
 
 case class SubtitleOccurrenceDetails(
-    fileAbsPath: String,
+    filename: String,
     phraseId: Int,
     startTimeMillis: Long,
     endTimeMillis: Long,
