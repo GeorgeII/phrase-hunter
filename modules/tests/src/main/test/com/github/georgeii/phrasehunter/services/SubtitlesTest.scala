@@ -7,6 +7,7 @@ import munit.CatsEffectSuite
 
 import java.io.File
 import com.github.georgeii.phrasehunter.models.phrase._
+import com.github.georgeii.phrasehunter.programs.util.FileReader
 import eu.timepit.refined.api.RefType
 
 class SubtitlesTest extends CatsEffectSuite {
@@ -14,18 +15,18 @@ class SubtitlesTest extends CatsEffectSuite {
   val subtitleDirectory = "data/subtitles/"
 
   test("List all subtitle files available in the directory") {
-    val filesIO = Subtitles.getAllSubtitleFilesInDirectory[IO](subtitleDirectory)
+    val filesIO = FileReader.getAllFilesInDirectory[IO](subtitleDirectory)
     assertIO(
       filesIO,
       List(
-        new File("data/subtitles/Murder by Death (1976).1080p.ita.eng.sub.ita.eng-MIRCrew.eng.srt"),
-        new File("data/subtitles/No.Country.For.Old.Men.2007.1080p.BrRip.x264.YIFY.srt")
+        new File("data/subtitles/Murder by Death (1976).srt"),
+        new File("data/subtitles/No Country For Old Men (2007).srt")
       )
     )
   }
 
   test("Number of files in the directory is correct") {
-    val filesNumberIO = Subtitles.getAllSubtitleFilesInDirectory[IO](subtitleDirectory).map(_.length)
+    val filesNumberIO = FileReader.getAllFilesInDirectory[IO](subtitleDirectory).map(_.length)
     assertIO(filesNumberIO, 2)
   }
 
@@ -36,35 +37,32 @@ class SubtitlesTest extends CatsEffectSuite {
       "This phrase is not in any subtitles"
     )
 
-    val subtitlesFound: IO[List[IO[List[SubtitleOccurrenceDetails]]]] = for {
-      filesList <- Subtitles.getAllSubtitleFilesInDirectory[IO](subtitleDirectory)
-      subtitleService = Subtitles.make[IO](filesList)
-      found = phrases.map(
-        p =>
-          subtitleService.findAll(
-            Phrase(
-              RefType.applyRef[PhraseRefined](p) match {
-                case Left(value) =>
-                  throw new IllegalArgumentException(
-                    s"A phrase should be non-empty and less than 100 characters long. $value"
-                  )
-                case Right(value) => value
-              }
-            )
-          )
-      )
-    } yield found
+    val filesList       = FileReader.getAllFilesInDirectory[IO](subtitleDirectory)
+    val subtitleService = Subtitles.make[IO](filesList)
 
-    val flattenSubsFound: IO[List[List[SubtitleOccurrenceDetails]]] = subtitlesFound.map(_.sequence).flatten
+    val subtitlesFound: List[IO[List[SubtitleOccurrenceDetails]]] = phrases
+      .map { p =>
+        subtitleService.findAll(
+          Phrase(
+            RefType.applyRef[PhraseRefined](p) match {
+              case Left(value) =>
+                throw new IllegalArgumentException(
+                  s"A phrase should be non-empty and less than 100 characters long. $value"
+                )
+              case Right(value) => value
+            }
+          )
+        )
+      }
+
+    val flattenSubsFound: IO[List[List[SubtitleOccurrenceDetails]]] = subtitlesFound.sequence
 
     assertIO(
       flattenSubsFound.map(subtitlesForAPhrase => subtitlesForAPhrase.map(_.length)),
-      List(
-        46,
-        3,
-        0
-      )
+      List(46, 3, 0)
     )
   }
+
+  // TODO: add test to check a concrete phrase in a concrete subtitle
 
 }
