@@ -6,15 +6,15 @@ import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
 import munit.CatsEffectSuite
 
 import java.io.File
-import com.github.georgeii.phrasehunter.models.phrase.Phrase
-import com.github.georgeii.phrasehunter.models.phrase.PhraseRefined
+import com.github.georgeii.phrasehunter.models.phrase._
+import eu.timepit.refined.api.RefType
 
 class SubtitlesTest extends CatsEffectSuite {
 
   val subtitleDirectory = "data/subtitles/"
 
   test("List all subtitle files available in the directory") {
-    val filesIO = Subtitles.getAllSubtitleFilesInDirectory[IO]("data/subtitles/")
+    val filesIO = Subtitles.getAllSubtitleFilesInDirectory[IO](subtitleDirectory)
     assertIO(
       filesIO,
       List(
@@ -39,30 +39,32 @@ class SubtitlesTest extends CatsEffectSuite {
     val subtitlesFound: IO[List[IO[List[SubtitleOccurrenceDetails]]]] = for {
       filesList <- Subtitles.getAllSubtitleFilesInDirectory[IO](subtitleDirectory)
       subtitleService = Subtitles.make[IO](filesList)
-      found           = phrases.map(p => subtitleService.findAll(Phrase(p)))
+      found = phrases.map(
+        p =>
+          subtitleService.findAll(
+            Phrase(
+              RefType.applyRef[PhraseRefined](p) match {
+                case Left(value) =>
+                  throw new IllegalArgumentException(
+                    s"A phrase should be non-empty and less than 100 characters long. $value"
+                  )
+                case Right(value) => value
+              }
+            )
+          )
+      )
     } yield found
 
     val flattenSubsFound: IO[List[List[SubtitleOccurrenceDetails]]] = subtitlesFound.map(_.sequence).flatten
 
     assertIO(
-      flattenSubsFound.map(phrasesList => phrasesList.map(_.length)),
+      flattenSubsFound.map(subtitlesForAPhrase => subtitlesForAPhrase.map(_.length)),
       List(
-        47,
+        46,
         3,
         0
       )
     )
-//    val subtitlesIO1 = Subtitles.getSubtitlesWithPhraseInAllFiles(phrases.head, "data/subtitles/")
-//    val subtitlesIO2 = searcher.getSubtitlesWithPhraseInAllFiles(phrase2, "data/subtitles/")
-//    val subtitlesIO3 = searcher.getSubtitlesWithPhraseInAllFiles(phrase3, "data/subtitles/")
-//
-//    val foundMatches1 = subtitlesIO1.map(_.length)
-//    val foundMatches2 = subtitlesIO2.map(_.length)
-//    val foundMatches3 = subtitlesIO3.map(_.length)
-//
-//    assertIO(foundMatches1, 47)
-//    assertIO(foundMatches2, 3)
-//    assertIO(foundMatches3, 0)
   }
 
 }
