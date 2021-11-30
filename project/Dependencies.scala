@@ -59,7 +59,7 @@ object Dependencies {
 
     // Test
     val munit           = "org.scalameta" %% "munit"               % V.munit           % Test
-    val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-2" % V.munitCatsEffect % Test
+    val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % V.munitCatsEffect % Test
 
     // Scalafix rules
     val organizeImports = "com.github.liancheng" %% "organize-imports" % V.organizeImports
