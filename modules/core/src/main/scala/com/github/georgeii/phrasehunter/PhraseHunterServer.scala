@@ -3,6 +3,7 @@ package com.github.georgeii.phrasehunter
 import cats.effect.{ Async, Resource }
 import cats.syntax.all._
 import com.comcast.ip4s._
+import com.github.georgeii.phrasehunter.programs.util.FileReader
 import com.github.georgeii.phrasehunter.routes.SearchRoutes
 import com.github.georgeii.phrasehunter.services.Subtitles
 import fs2.Stream
@@ -23,19 +24,8 @@ object PhraseHunterServer {
       helloWorldAlg = HelloWorld.impl[F]
       jokeAlg       = Jokes.impl[F](client)
 
-      // \/\/\/\/\/ TODO: Fix this ↓↓↓↓↓
-
       subtitleDirectory = "data/subtitles/"
-//      searchServiceF    = Subtitles.getAllSubtitleFilesInDirectory[F](subtitleDirectory)
-//      searchRoutes      = searchServiceF.map(files => SearchRoutes(Subtitles.make(files)))
-      filesDirectory = new File(subtitleDirectory)
-
-      files = if (filesDirectory.exists && filesDirectory.isDirectory) {
-        filesDirectory.listFiles.filter(_.isFile).toList
-      } else {
-        List.empty[File]
-      }
-      // \/\/\/\/\/ TODO: Fix this ↑↑↑↑↑
+      files             = FileReader.getAllFilesInDirectory(subtitleDirectory)
 
       httpApp = (
         SearchRoutes(Subtitles.make(files)).routes
