@@ -3,6 +3,7 @@ package com.github.georgeii.phrasehunter.services
 import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
+
 import com.github.georgeii.phrasehunter.models.phrase._
 import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
 import com.github.georgeii.phrasehunter.programs.util.FileReader
@@ -38,15 +39,5 @@ object Subtitles {
       }
     }
   }
-
-//  def getSubtitlesWithPhraseInAllFiles(
-//      phrase: String,
-//      directory: String = directory
-//  ): F[List[SubtitleOccurrenceDetails]] = {
-//    for {
-//      vectorOfFiles <- getAllSubtitleFilesInDirectory(directory)
-//      files         <- vectorOfFiles.traverse(file => findPhraseInFile(phrase, file))
-//    } yield files.flatten
-//  }
 
 }
