@@ -36,4 +36,13 @@ object TimeConverter {
     }
   }
 
+  def convertMillisToTime(timestamp: Long): String = {
+    val millis = timestamp                      % 1000
+    val second = (timestamp / 1000)             % 60
+    val minute = (timestamp / (1000 * 60))      % 60
+    val hour   = (timestamp / (1000 * 60 * 60)) % 24
+
+    String.format("%02d:%02d:%02d.%d", hour, minute, second, millis)
+  }
+
 }
