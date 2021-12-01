@@ -10,6 +10,7 @@ object Dependencies {
     val circe           = "0.14.1"
     val newtype         = "0.4.4"
     val refined         = "0.9.27"
+    val derevo          = "0.12.8"
     val munit           = "0.7.20"
     val munitCatsEffect = "0.13.0"
     val pureConfig      = "0.16.0"
@@ -27,6 +28,7 @@ object Dependencies {
     def circe(artifact: String): ModuleID  = "io.circe"   %% s"circe-$artifact"  % V.circe
     def ciris(artifact: String): ModuleID  = "is.cir"     %% artifact            % V.ciris
     def http4s(artifact: String): ModuleID = "org.http4s" %% s"http4s-$artifact" % V.http4s
+    def derevo(artifact: String): ModuleID = "tf.tofu"    %% s"derevo-$artifact" % V.derevo
 
     val cats       = "org.typelevel" %% "cats-core"   % V.cats
     val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
@@ -46,6 +48,10 @@ object Dependencies {
     val cirisCore    = ciris("ciris")
     val cirisEnum    = ciris("ciris-enumeratum")
     val cirisRefined = ciris("ciris-refined")
+
+    val derevoCore  = derevo("core")
+    val derevoCats  = derevo("cats")
+    val derevoCirce = derevo("circe-magnolia")
 
     val newtype = "io.estatico" %% "newtype" % V.newtype
 
