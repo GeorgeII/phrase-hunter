@@ -2,22 +2,26 @@ package com.github.georgeii.phrasehunter.services
 
 import cats.effect.IO
 import cats.syntax.traverse._
-import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
 import munit.CatsEffectSuite
+import eu.timepit.refined.api.RefType
+import eu.timepit.refined.auto._
 
-import java.io.File
 import com.github.georgeii.phrasehunter.models.phrase._
 import com.github.georgeii.phrasehunter.programs.util.FileReader
-import eu.timepit.refined.api.RefType
+import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
+
+import java.io.File
 
 class SubtitlesTest extends CatsEffectSuite {
 
-  val subtitleDirectory = "data/subtitles/"
+  val subtitleFilesDirectory = "data/subtitles/"
+
+  val filesList: IO[List[File]]      = FileReader.getAllFilesInDirectory[IO](subtitleFilesDirectory)
+  val subtitleService: Subtitles[IO] = Subtitles.make[IO](filesList)
 
   test("List all subtitle files available in the directory") {
-    val filesIO = FileReader.getAllFilesInDirectory[IO](subtitleDirectory)
     assertIO(
-      filesIO,
+      filesList,
       List(
         new File("data/subtitles/Murder by Death (1976).srt"),
         new File("data/subtitles/No Country For Old Men (2007).srt")
@@ -26,7 +30,7 @@ class SubtitlesTest extends CatsEffectSuite {
   }
 
   test("Number of files in the directory is correct") {
-    val filesNumberIO = FileReader.getAllFilesInDirectory[IO](subtitleDirectory).map(_.length)
+    val filesNumberIO = filesList.map(_.length)
     assertIO(filesNumberIO, 2)
   }
 
@@ -36,9 +40,6 @@ class SubtitlesTest extends CatsEffectSuite {
       "twelve",
       "This phrase is not in any subtitles"
     )
-
-    val filesList       = FileReader.getAllFilesInDirectory[IO](subtitleDirectory)
-    val subtitleService = Subtitles.make[IO](filesList)
 
     val subtitlesFound: List[IO[List[SubtitleOccurrenceDetails]]] = phrases
       .map { p =>
@@ -63,6 +64,21 @@ class SubtitlesTest extends CatsEffectSuite {
     )
   }
 
-  // TODO: add test to check a concrete phrase in a concrete subtitle
+  test("A concrete cherry-picked phrase in a concrete subtitle") {
+    val results = subtitleService.findAll(Phrase("and we won't argue about it"))
+
+    assertIO(
+      results,
+      List(
+        SubtitleOccurrenceDetails(
+          "No Country For Old Men (2007)",
+          365,
+          2_453_092,
+          2_456_092,
+          "Why don't I just set you down around here and we won't argue about it."
+        )
+      )
+    )
+  }
 
 }
