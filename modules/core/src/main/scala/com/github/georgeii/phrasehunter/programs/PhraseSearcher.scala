@@ -1,6 +1,5 @@
 package com.github.georgeii.phrasehunter.programs
 
-import cats.effect.Sync
 import com.github.georgeii.phrasehunter.models.{ Subtitle, SubtitleOccurrenceDetails }
 import com.github.georgeii.phrasehunter.models.phrase.Phrase
 import com.github.georgeii.phrasehunter.programs.util.TimeConverter.extractStartEndTimestamps
@@ -10,7 +9,7 @@ object PhraseSearcher {
   private def extractInfoFromSubtitle(subtitle: String): Subtitle = {
     val metaInfo = subtitle.split("\r\n")
 
-    Subtitle(metaInfo(0).toInt, metaInfo(1), metaInfo.drop(2).mkString(" ").toLowerCase)
+    Subtitle(metaInfo(0).toInt, metaInfo(1), metaInfo.drop(2).mkString(" "))
   }
 
   def findOccurrencesInFile(
@@ -22,7 +21,7 @@ object PhraseSearcher {
 
     val subtitlesThatContainPhrase = separateSubtitles.view
       .map(sub => extractInfoFromSubtitle(sub))
-      .filter(_.text.contains(phrase.toString))
+      .filter(_.text.toLowerCase.contains(phrase.toString.toLowerCase))
       .map { sub =>
         val (startMillis, endMillis) = extractStartEndTimestamps(sub.timestamp)
 
