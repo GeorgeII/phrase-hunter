@@ -76,6 +76,7 @@ lazy val core = (project in file("modules/core"))
       Libraries.refinedCats,
       Libraries.refinedCore,
       Libraries.log4cats,
+      Libraries.vlcj,
       Libraries.logback % Runtime
     )
   )
