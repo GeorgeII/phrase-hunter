@@ -24,7 +24,7 @@ object Subtitles {
         subtitleStorage.map { filesList =>
           filesList
             .map { file =>
-              val fileResource        = FileReader.makeFileResource[F](file)
+              val fileResource        = FileReader.makeSubtitleFileResource[F](file)
               val filenameNoExtension = file.getName.split('.').toList.dropRight(1).mkString
 
               fileResource.use { bufferedSource =>
