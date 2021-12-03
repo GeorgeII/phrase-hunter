@@ -3,18 +3,15 @@ package com.github.georgeii.phrasehunter
 import cats.effect.{ Async, Resource }
 import cats.syntax.all._
 import com.comcast.ip4s._
-import com.github.georgeii.phrasehunter.programs.util.FileReader
-import com.github.georgeii.phrasehunter.routes.SearchRoutes
-import com.github.georgeii.phrasehunter.services.Subtitles
 import fs2.Stream
-import org.http4s.HttpRoutes
-import org.http4s.dsl.Http4sDsl
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
 
-import java.io.File
+import com.github.georgeii.phrasehunter.programs.util.FileReader
+import com.github.georgeii.phrasehunter.routes.{ MediaRoutes, SearchRoutes }
+import com.github.georgeii.phrasehunter.services.{ Media, Subtitles }
 
 object PhraseHunterServer {
 
@@ -25,10 +22,13 @@ object PhraseHunterServer {
       jokeAlg       = Jokes.impl[F](client)
 
       subtitleDirectory = "data/subtitles/"
-      files             = FileReader.getAllFilesInDirectory(subtitleDirectory)
+      subtitleFiles     = FileReader.getAllFilesInDirectory(subtitleDirectory)
+      mediaDirectory    = "data/media/"
+      mediaFiles        = FileReader.getAllFilesInDirectory(mediaDirectory)
 
       httpApp = (
-        SearchRoutes(Subtitles.make(files)).routes
+        SearchRoutes(Subtitles.make(subtitleFiles)).routes
+          <+> MediaRoutes(Media.make(mediaFiles)).routes
 
 //          <+> AsdfRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
