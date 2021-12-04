@@ -7,8 +7,8 @@ import eu.timepit.refined.api.RefType
 import eu.timepit.refined.auto._
 
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.programs.util.FileReader
 import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
+import com.github.georgeii.phrasehunter.util.FileReader
 
 import java.io.File
 

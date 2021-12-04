@@ -3,7 +3,7 @@ package com.github.georgeii.phrasehunter.codecs
 import io.circe.Encoder
 
 import com.github.georgeii.phrasehunter.models.SubtitleOccurrenceDetails
-import com.github.georgeii.phrasehunter.programs.util.TimeConverter
+import com.github.georgeii.phrasehunter.util.TimeConverter
 
 object subtitleOccurrenceDetails {
 

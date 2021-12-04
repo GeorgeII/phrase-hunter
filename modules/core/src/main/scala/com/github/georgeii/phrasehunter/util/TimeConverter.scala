@@ -1,4 +1,4 @@
-package com.github.georgeii.phrasehunter.programs.util
+package com.github.georgeii.phrasehunter.util
 
 import scala.util.chaining._
 
