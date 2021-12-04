@@ -17,8 +17,6 @@ object Dependencies {
     val ciris           = "2.1.1"
     val log4cats        = "2.1.1"
 
-    val vlcj = "4.7.1"
-
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.13.2"
     val logback          = "1.2.7"
@@ -61,8 +59,6 @@ object Dependencies {
     val refinedCats = "eu.timepit" %% "refined-cats" % V.refined
 
     val log4cats = "org.typelevel" %% "log4cats-slf4j" % V.log4cats
-
-    val vlcj = "uk.co.caprica" % "vlcj" % V.vlcj
 
     // Runtime
     val logback = "ch.qos.logback" % "logback-classic" % V.logback
