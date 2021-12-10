@@ -11,6 +11,7 @@ object Dependencies {
     val newtype         = "0.4.4"
     val refined         = "0.9.27"
     val derevo          = "0.12.8"
+    val doobie          = "1.0.0-RC1"
     val munit           = "0.7.20"
     val munitCatsEffect = "0.13.0"
     val pureConfig      = "0.16.0"
@@ -25,10 +26,11 @@ object Dependencies {
   }
 
   object Libraries {
-    def circe(artifact: String): ModuleID  = "io.circe"   %% s"circe-$artifact"  % V.circe
-    def ciris(artifact: String): ModuleID  = "is.cir"     %% artifact            % V.ciris
-    def http4s(artifact: String): ModuleID = "org.http4s" %% s"http4s-$artifact" % V.http4s
-    def derevo(artifact: String): ModuleID = "tf.tofu"    %% s"derevo-$artifact" % V.derevo
+    def circe(artifact: String): ModuleID  = "io.circe"     %% s"circe-$artifact"  % V.circe
+    def ciris(artifact: String): ModuleID  = "is.cir"       %% artifact            % V.ciris
+    def http4s(artifact: String): ModuleID = "org.http4s"   %% s"http4s-$artifact" % V.http4s
+    def derevo(artifact: String): ModuleID = "tf.tofu"      %% s"derevo-$artifact" % V.derevo
+    def doobie(artifact: String): ModuleID = "org.tpolecat" %% s"doobie-$artifact" % V.doobie
 
     val cats       = "org.typelevel" %% "cats-core"   % V.cats
     val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
@@ -60,6 +62,10 @@ object Dependencies {
 
     val log4cats = "org.typelevel" %% "log4cats-slf4j" % V.log4cats
 
+    val doobieCore     = doobie("core")
+    val doobiePostgres = doobie("postgres")
+    val doobieSpecs2   = doobie("specs2")
+
     // Runtime
     val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
@@ -76,10 +82,10 @@ object Dependencies {
       "com.olegpy" %% "better-monadic-for" % V.betterMonadicFor
     )
     val kindProjector = compilerPlugin(
-      "org.typelevel" % "kind-projector" % V.kindProjector cross CrossVersion.full
+      ("org.typelevel" % "kind-projector" % V.kindProjector).cross(CrossVersion.full)
     )
     val semanticDB = compilerPlugin(
-      "org.scalameta" % "semanticdb-scalac" % V.semanticDB cross CrossVersion.full
+      ("org.scalameta" % "semanticdb-scalac" % V.semanticDB).cross(CrossVersion.full)
     )
   }
 
