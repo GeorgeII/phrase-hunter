@@ -8,5 +8,5 @@ Start services:
 docker-compose up -d
 ```
 
-There is a pgAdmin service, you can go to [localhost:5050](localhost:5050) for it. The default pgAdmin password is _admin_.
+There is a pgAdmin service, you can go to [localhost:5050](http://localhost:5050) for it. The default pgAdmin password is _admin_.
 On the left browser panel Servers -> create -> Server. Enter name: _phrase-hunter-server_, connection hostname: _postgres_container_, password: _password_.
