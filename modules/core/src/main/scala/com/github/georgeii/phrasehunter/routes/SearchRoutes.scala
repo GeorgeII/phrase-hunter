@@ -22,7 +22,6 @@ final case class SearchRoutes[F[_]: Concurrent](
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root =>
       Ok("I'm fine!")
-//      Ok(subtitles.findAll(Phrase("smth")))
 
     case req @ POST -> Root =>
       for {
