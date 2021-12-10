@@ -3,9 +3,11 @@ package com.github.georgeii.phrasehunter.services
 import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
+import doobie.implicits._
+import doobie.util.transactor.Transactor.Aux
 
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.models.{ Subtitle, SubtitleOccurrenceDetails }
+import com.github.georgeii.phrasehunter.models.{ PhraseDatabaseRecord, Subtitle, SubtitleOccurrenceDetails }
 import com.github.georgeii.phrasehunter.util.FileReader
 import com.github.georgeii.phrasehunter.util.TimeConverter
 
@@ -14,14 +16,16 @@ import scala.util.Try
 
 trait Subtitles[F[_]] {
   def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]]
+  def create(phrase: Phrase, matchesNumber: Int): F[Int]
 }
 
 object Subtitles {
   def make[F[_]: Sync](
+      postgresXa: Aux[F, Unit],
       subtitleStorage: F[List[File]]
-  ): Subtitles[F] = {
+  ): Subtitles[F] =
     new Subtitles[F] {
-      override def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]] = {
+      override def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]] =
         subtitleStorage.map { filesList =>
           filesList
             .map { file =>
@@ -35,9 +39,13 @@ object Subtitles {
             .sequence
             .map(_.flatten)
         }.flatten
-      }
+
+      override def create(phrase: Phrase, matchesNumber: Int): F[Int] =
+        sql"""
+            insert into search_history (phrase, matches_number) values ($phrase, $matchesNumber)
+        """.update.run
+          .transact(postgresXa)
     }
-  }
 
   def extractInfoFromSubtitle(subtitle: String): Either[Throwable, Subtitle] = {
     val metaInfo = subtitle.split("\r\n")
