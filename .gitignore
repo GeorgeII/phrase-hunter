@@ -22,3 +22,8 @@
 
 null/
 target/
+
+
+# data from docker containers
+/data/pgadmin/
+/data/postgres/
