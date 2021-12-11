@@ -1,6 +1,5 @@
 package com.github.georgeii.phrasehunter.routes
 
-import cats.Applicative
 import com.github.georgeii.phrasehunter.models.phrase._
 import com.github.georgeii.phrasehunter.codecs.phrase._
 import com.github.georgeii.phrasehunter.codecs.subtitleOccurrenceDetails._
@@ -27,8 +26,7 @@ final case class SearchRoutes[F[_]: Concurrent](
       for {
         phrase         <- req.as[Phrase]
         foundSubtitles <- subtitles.findAll(phrase)
-        insertedInt    <- subtitles.create(phrase, foundSubtitles.length)
-        _              <- Applicative[F].pure(println(insertedInt))
+        _              <- subtitles.create(phrase, foundSubtitles.length)
         resp           <- Ok(foundSubtitles)
       } yield resp
   }
