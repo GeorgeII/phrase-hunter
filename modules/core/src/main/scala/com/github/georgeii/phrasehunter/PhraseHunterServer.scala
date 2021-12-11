@@ -8,8 +8,8 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
-import com.github.georgeii.phrasehunter.routes.SearchRoutes
-import com.github.georgeii.phrasehunter.services.Subtitles
+import com.github.georgeii.phrasehunter.routes.{ RecentHistoryRoutes, SearchRoutes }
+import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
 import com.github.georgeii.phrasehunter.util.FileReader
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
@@ -27,11 +27,14 @@ object PhraseHunterServer {
       "password"                       // password
     )
 
+    val redis: Resource[F, _] = Resource.never
+
     for {
       client <- Stream.resource(EmberClientBuilder.default[F].build)
 
       httpApp = (
         SearchRoutes(Subtitles.make(postgresTransactor, subtitleFiles)).routes
+          <+> RecentHistoryRoutes(RecentHistory.make(postgresTransactor, redis)).routes
       ).orNotFound
 
       // With Middlewares in place
