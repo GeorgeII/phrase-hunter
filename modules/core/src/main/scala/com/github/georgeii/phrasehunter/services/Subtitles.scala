@@ -7,7 +7,7 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor.Aux
 
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.models.{ PhraseDatabaseRecord, Subtitle, SubtitleOccurrenceDetails }
+import com.github.georgeii.phrasehunter.models.{ Subtitle, SubtitleOccurrenceDetails }
 import com.github.georgeii.phrasehunter.util.FileReader
 import com.github.georgeii.phrasehunter.util.TimeConverter
 
@@ -42,7 +42,7 @@ object Subtitles {
 
       override def create(phrase: Phrase, matchesNumber: Int): F[Int] =
         sql"""
-            insert into search_history (phrase, matches_number) values ($phrase, $matchesNumber)
+            insert into search_history (phrase, matches_number) values (${phrase.value.value}, $matchesNumber)
         """.update.run
           .transact(postgresXa)
     }
