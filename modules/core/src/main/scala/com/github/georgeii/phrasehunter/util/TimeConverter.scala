@@ -5,9 +5,9 @@ import scala.util.chaining._
 object TimeConverter {
 
   /**
-    * @param timeString ex.: 00:02:19,482 --> 00:02:21,609   This is how it's written in .srt files.
-    * @return ("00:02:19,482", "00:02:21,609")
-    */
+   * @param timeString ex.: 00:02:19,482 --> 00:02:21,609   This is how it's written in .srt files.
+   * @return ("00:02:19,482", "00:02:21,609")
+   */
   private def extractTimestampsFromSubtitleString(timeString: String): (String, String) = {
     val startAndEndTimestamps = timeString.split(" --> ")
 
@@ -15,8 +15,8 @@ object TimeConverter {
   }
 
   /**
-    * @param timestamp .srt specific timestamp in format like 00:02:19,482
-    */
+   * @param timestamp .srt specific timestamp in format like 00:02:19,482
+   */
   private def convertStringTimeToMillis(timestamp: String): Long = {
     val hoursMinutesSecondsSplit = timestamp.split(":")
     val secondsMillisSplit       = hoursMinutesSecondsSplit(2).split(",")
@@ -30,11 +30,10 @@ object TimeConverter {
   }
 
   // TODO: Refined type for a timeString
-  def extractStartEndTimestamps(timeString: String): (Long, Long) = {
+  def extractStartEndTimestamps(timeString: String): (Long, Long) =
     extractTimestampsFromSubtitleString(timeString).pipe {
       case (start, end) => (convertStringTimeToMillis(start), convertStringTimeToMillis(end))
     }
-  }
 
   def convertMillisToTime(timestamp: Long): String = {
     val millis = timestamp                      % 1000

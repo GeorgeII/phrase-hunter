@@ -17,12 +17,10 @@ object FileReader {
     }
   }
 
-  def getNameNoExtension(file: File): String = {
+  def getNameNoExtension(file: File): String =
     file.getName.split('.').toList.dropRight(1).mkString(".")
-  }
 
-  def makeSubtitleFileResource[F[_]: Sync](file: File): Resource[F, BufferedSource] = {
+  def makeSubtitleFileResource[F[_]: Sync](file: File): Resource[F, BufferedSource] =
     Resource.fromAutoCloseable { Applicative[F].pure(Source.fromFile(file)) }
-  }
 
 }
