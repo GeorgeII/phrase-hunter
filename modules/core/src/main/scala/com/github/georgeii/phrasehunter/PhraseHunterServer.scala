@@ -13,6 +13,7 @@ import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
 import com.github.georgeii.phrasehunter.util.FileReader
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
+import org.http4s.server.Router
 
 object PhraseHunterServer {
 
@@ -32,13 +33,15 @@ object PhraseHunterServer {
     for {
       client <- Stream.resource(EmberClientBuilder.default[F].build)
 
-      httpApp = (
-        SearchRoutes(Subtitles.make(postgresTransactor, subtitleFiles)).routes
-          <+> RecentHistoryRoutes(RecentHistory.make(postgresTransactor, redis)).routes
+      publicRoutes = SearchRoutes(Subtitles.make(postgresTransactor, subtitleFiles)).routes <+>
+          RecentHistoryRoutes(RecentHistory.make(postgresTransactor, redis)).routes
+
+      httpRoutes = Router(
+        routes.version.v1 -> publicRoutes
       ).orNotFound
 
       // With Middlewares in place
-      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
+      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpRoutes)
 
       exitCode <- Stream.resource(
         EmberServerBuilder
