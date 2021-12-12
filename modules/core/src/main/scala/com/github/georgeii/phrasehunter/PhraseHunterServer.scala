@@ -22,10 +22,10 @@ object PhraseHunterServer {
     val subtitleFiles     = FileReader.getAllFilesInDirectory(subtitleDirectory)
 
     val postgresTransactor: Aux[F, Unit] = Transactor.fromDriverManager[F](
-      "org.postgresql.Driver",         // driver classname
-      "jdbc:postgresql:phrase-hunter", // connect URL (driver-specific)
-      "postgres",                      // user
-      "password"                       // password
+      "org.postgresql.Driver",                              // driver classname
+      "jdbc:postgresql://postgres_container/phrase-hunter", // connect URL (driver-specific)
+      "postgres",                                           // user
+      "password"                                            // password
     )
 
     val redis: Resource[F, _] = Resource.never
