@@ -1,4 +1,5 @@
 import Dependencies._
+import com.typesafe.sbt.packager.MappingsHelper._
 
 ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / version := "0.0.1"
@@ -43,8 +44,9 @@ lazy val core = (project in file("modules/core"))
     resolvers += Resolver.sonatypeRepo("snapshots"),
     Defaults.itSettings,
     dockerBaseImage := "openjdk:11-jre-slim-buster",
-    dockerExposedPorts ++= Seq(8080),
+//    dockerExposedPorts ++= Seq(8080),
     makeBatScripts := Seq(),
+    Universal / mappings ++= directory("data/subtitles"),
     dockerUpdateLatest := true,
     libraryDependencies ++= Seq(
           CompilerPlugin.kindProjector,
