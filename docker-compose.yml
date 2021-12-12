@@ -2,6 +2,16 @@ version: '3.5'
 
 services:
 
+  phrase-hunter:
+    image: phrase-hunter:latest
+    container_name: phrase_hunter
+    #    network_mode: host
+    ports:
+      - "8080:8080"
+    environment:
+      - DEBUG=false
+    restart: always
+
   redis:
     image: redis:6.2.0
     container_name: redis_container
