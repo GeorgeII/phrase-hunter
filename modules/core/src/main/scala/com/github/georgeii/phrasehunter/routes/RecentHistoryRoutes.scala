@@ -14,9 +14,29 @@ final case class RecentHistoryRoutes[F[_]: Concurrent](
 
   private[routes] val prefixPath = "/history"
 
+  object OptionalHistoryDepthParameterMatcher extends OptionalQueryParamDecoderMatcher[Int]("n")
+
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root =>
-      Ok(history.getAllRecent())
+    case GET -> Root :? OptionalHistoryDepthParameterMatcher(maybeN) =>
+      val result = maybeN match {
+        case Some(historyDepth) => history.getAllRecent(historyDepth)
+        case None               => history.getAllRecent()
+      }
+      Ok(result)
+
+    case GET -> Root / "found" :? OptionalHistoryDepthParameterMatcher(maybeN) =>
+      val result = maybeN match {
+        case Some(historyDepth) => history.getRecentFound(historyDepth)
+        case None               => history.getRecentFound()
+      }
+      Ok(result)
+
+    case GET -> Root / "notFound" :? OptionalHistoryDepthParameterMatcher(maybeN) =>
+      val result = maybeN match {
+        case Some(historyDepth) => history.getRecentNotFound(historyDepth)
+        case None               => history.getRecentNotFound()
+      }
+      Ok(result)
 
   }
 
