@@ -25,5 +25,5 @@ target/
 
 
 # data from docker containers
-/data/pgadmin/
-/data/postgres/
+/volumes/pgadmin/
+/volumes/postgres/
