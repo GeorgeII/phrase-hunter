@@ -46,8 +46,9 @@ lazy val core = (project in file("modules/core"))
     dockerBaseImage := "openjdk:11-jre-slim-buster",
 //    dockerExposedPorts ++= Seq(8080),
     makeBatScripts := Seq(),
-    Universal / mappings ++= directory("data/subtitles"),
-    dockerUpdateLatest := true,
+    Universal / mappings ++= directory("data"),
+    dockerEnvVars += "DATA_DIR" -> "/opt/docker",
+//    dockerUpdateLatest := true,
     libraryDependencies ++= Seq(
           CompilerPlugin.kindProjector,
           CompilerPlugin.betterMonadicFor,

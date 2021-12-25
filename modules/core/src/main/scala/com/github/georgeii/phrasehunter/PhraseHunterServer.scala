@@ -10,7 +10,7 @@ import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
 import com.github.georgeii.phrasehunter.routes.{ RecentHistoryRoutes, SearchRoutes }
 import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
-import com.github.georgeii.phrasehunter.util.FileReader
+import com.github.georgeii.phrasehunter.util.{ FileReader, StaticResourceResolver }
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
 import org.http4s.server.Router
@@ -18,8 +18,11 @@ import org.http4s.server.Router
 object PhraseHunterServer {
 
   def stream[F[_]: Async]: Stream[F, Nothing] = {
-    val subtitleDirectory = "data/subtitles/"
-    val subtitleFiles     = FileReader.getAllFilesInDirectory(subtitleDirectory)
+    val subtitleDirectory = StaticResourceResolver.getSubtitleDirectoryPath
+    val subtitleFiles = for {
+      sd    <- subtitleDirectory
+      files <- FileReader.getAllFilesInDirectory(sd)
+    } yield files
 
     val postgresTransactor: Aux[F, Unit] = Transactor.fromDriverManager[F](
       "org.postgresql.Driver",                              // driver classname
