@@ -12,6 +12,7 @@ object Dependencies {
     val refined         = "0.9.27"
     val derevo          = "0.12.8"
     val doobie          = "1.0.0-RC1"
+    val redis4cats      = "1.0.0"
     val munit           = "0.7.20"
     val munitCatsEffect = "0.13.0"
     val pureConfig      = "0.16.0"
@@ -65,6 +66,9 @@ object Dependencies {
     val doobieCore     = doobie("core")
     val doobiePostgres = doobie("postgres")
     val doobieSpecs2   = doobie("specs2")
+
+    val redis4catsEffects  = "dev.profunktor" %% "redis4cats-effects"  % V.redis4cats
+    val redis4catsLog4cats = "dev.profunktor" %% "redis4cats-log4cats" % V.redis4cats
 
     // Runtime
     val logback = "ch.qos.logback" % "logback-classic" % V.logback
