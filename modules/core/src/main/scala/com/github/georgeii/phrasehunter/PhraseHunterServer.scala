@@ -12,7 +12,7 @@ import com.github.georgeii.phrasehunter.routes.{ RecentHistoryRoutes, SearchRout
 import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
 import com.github.georgeii.phrasehunter.util.{ FileReader, StaticResourceResolver }
 import dev.profunktor.redis4cats.effect.Log.Stdout.instance
-import dev.profunktor.redis4cats.Redis
+import dev.profunktor.redis4cats.{ Redis, RedisCommands }
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
 import org.http4s.server.Router
@@ -33,7 +33,7 @@ object PhraseHunterServer {
       "password"                                            // password
     )
 
-    val redis: Resource[F, _] = Redis[F].utf8("redis://localhost")
+    val redis: Resource[F, RedisCommands[F, String, String]] = Redis[F].utf8("redis://localhost")
 
     for {
       client <- Stream.resource(EmberClientBuilder.default[F].build)
