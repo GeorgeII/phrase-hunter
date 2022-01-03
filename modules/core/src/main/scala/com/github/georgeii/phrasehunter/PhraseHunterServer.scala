@@ -33,12 +33,12 @@ object PhraseHunterServer {
       "password"                                            // password
     )
 
-    val redis: Resource[F, RedisCommands[F, String, String]] = Redis[F].utf8("redis://localhost")
+    val redis: Resource[F, RedisCommands[F, String, String]] = Redis[F].utf8("redis://redis")
 
     for {
       client <- Stream.resource(EmberClientBuilder.default[F].build)
 
-      publicRoutes = SearchRoutes(Subtitles.make(postgresTransactor, subtitleFiles)).routes <+>
+      publicRoutes = SearchRoutes(Subtitles.make(postgresTransactor, redis, subtitleFiles)).routes <+>
           RecentHistoryRoutes(RecentHistory.make(postgresTransactor, redis)).routes
 
       httpRoutes = Router(
