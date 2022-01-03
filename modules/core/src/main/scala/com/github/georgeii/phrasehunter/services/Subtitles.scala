@@ -1,17 +1,22 @@
 package com.github.georgeii.phrasehunter.services
 
 import cats.Applicative
-import cats.effect.Sync
+import cats.effect.{ Resource, Sync }
 import cats.implicits._
 import doobie.implicits._
 import doobie.util.transactor.Transactor.Aux
+import dev.profunktor.redis4cats.RedisCommands
+import io.circe.Json
 
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.models.{ Subtitle, SubtitleOccurrenceDetails }
+import com.github.georgeii.phrasehunter.models.{ PhraseRecord, Subtitle, SubtitleOccurrenceDetails }
 import com.github.georgeii.phrasehunter.util.FileReader
 import com.github.georgeii.phrasehunter.util.TimeConverter
+import com.github.georgeii.phrasehunter.codecs.json.{ phraseRecord => phraseRecordJson }
 
 import java.io.File
+import java.sql.Timestamp
+import java.time.Instant
 import scala.util.Try
 
 trait Subtitles[F[_]] {
@@ -22,9 +27,11 @@ trait Subtitles[F[_]] {
 object Subtitles {
   def make[F[_]: Sync](
       postgresXa: Aux[F, Unit],
+      redis: Resource[F, RedisCommands[F, String, String]],
       subtitleStorage: F[List[File]]
   ): Subtitles[F] =
     new Subtitles[F] {
+
       override def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]] =
         subtitleStorage.map { filesList =>
           filesList
@@ -41,10 +48,11 @@ object Subtitles {
         }.flatten
 
       override def create(phrase: Phrase, matchesNumber: Int): F[Int] =
-        sql"""
-            insert into search_history (phrase, matches_number) values (${phrase.value.value}, $matchesNumber)
-        """.update.run
-          .transact(postgresXa)
+        for {
+          id     <- createInPostgres(phrase, matchesNumber, postgresXa)
+          record <- Applicative[F].pure(PhraseRecord(id, phrase, matchesNumber, Timestamp.from(Instant.now())))
+          _      <- createInRedis(record, redis)
+        } yield id
     }
 
   def extractInfoFromSubtitle(subtitle: String): Either[Throwable, Subtitle] = {
@@ -76,5 +84,27 @@ object Subtitles {
 
     subtitlesThatContainPhrase
   }
+
+  def createInPostgres[F[_]: Sync](
+      phrase: Phrase,
+      matchesNumber: Int,
+      postgresXa: Aux[F, Unit]
+  ): F[Int] =
+    sql"""
+        insert into search_history (phrase, matches_number) values (${phrase.value.value}, $matchesNumber)
+    """.update
+      .withUniqueGeneratedKeys[Int]("id")
+      .transact(postgresXa)
+
+  def createInRedis[F[_]: Sync](
+      phraseRecord: PhraseRecord,
+      redis: Resource[F, RedisCommands[F, String, String]]
+  ): F[Unit] =
+    redis.use { redisCommands =>
+      val record: Json = phraseRecordJson.encoder(phraseRecord)
+
+      redisCommands.lPush("recent_history", record.noSpaces) *>
+        redisCommands.lTrim("recent_history", 0, 9)
+    }
 
 }

@@ -5,9 +5,11 @@ import cats.implicits._
 import doobie.implicits._
 import doobie.util.transactor.Transactor.Aux
 import dev.profunktor.redis4cats.RedisCommands
+import io.circe.parser._
+import io.circe.Json
 import com.github.georgeii.phrasehunter.models.PhraseRecord
 import com.github.georgeii.phrasehunter.codecs.doobie.phraseRecord._
-import com.github.georgeii.phrasehunter.codecs.redis.phraseRecord._
+import com.github.georgeii.phrasehunter.codecs.json.{ phraseRecord => phraseRecordJson }
 
 trait RecentHistory[F[_]] {
   def getAllRecent(n: Int = 10): F[List[PhraseRecord]]
@@ -57,13 +59,18 @@ object RecentHistory {
       redis: Resource[F, RedisCommands[F, String, String]]
   ): F[List[PhraseRecord]] =
     redis.use { redisCommands =>
-      val keys = (1 to n).map(number => s"recent:$number").toList
-
-      keys
-        .map(key => redisCommands.hGetAll(key))
-        .sequence
-        .map(_.map(encodePhraseRecord))
-        .map(list => list.sortWith(_.timestamp.getTime < _.timestamp.getTime))
+      redisCommands
+        .lRange("recent_history", 0L, n.toLong)
+        .map(_.reverse)
+        .map(list => list.map(str => phraseRecordJson.decoder.decodeJson(parse(str).getOrElse(Json.Null))))
+        .map(_.sequence)
+        .map {
+          case Right(list)           => list
+          case Left(decodingFailure) =>
+            // TODO: logging
+            println(s"Failed to decode json from Redis. $decodingFailure")
+            List.empty[PhraseRecord]
+        }
     }
 
   private def getAllRecentFromPostgres[F[_]: Sync](
