@@ -1,4 +1,4 @@
-package com.github.georgeii.phrasehunter.codecs
+package com.github.georgeii.phrasehunter.codecs.json
 
 import io.circe.Encoder
 

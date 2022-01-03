@@ -1,7 +1,7 @@
 package com.github.georgeii.phrasehunter.routes
 
 import cats.effect.Concurrent
-import com.github.georgeii.phrasehunter.codecs.phraseRecord._
+import com.github.georgeii.phrasehunter.codecs.json.phraseRecord._
 import com.github.georgeii.phrasehunter.services.RecentHistory
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl

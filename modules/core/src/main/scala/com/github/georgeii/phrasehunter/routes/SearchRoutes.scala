@@ -1,8 +1,8 @@
 package com.github.georgeii.phrasehunter.routes
 
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.codecs.phrase._
-import com.github.georgeii.phrasehunter.codecs.subtitleOccurrenceDetails._
+import com.github.georgeii.phrasehunter.codecs.json.phrase._
+import com.github.georgeii.phrasehunter.codecs.json.subtitleOccurrenceDetails._
 import com.github.georgeii.phrasehunter.services.Subtitles
 import cats.syntax.flatMap._
 import cats.syntax.functor._
