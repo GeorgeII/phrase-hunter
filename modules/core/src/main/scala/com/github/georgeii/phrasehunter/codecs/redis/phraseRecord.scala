@@ -18,7 +18,7 @@ object phraseRecord {
       _.toString
     )
 
-  def encodePhraseRecord(phraseRecord: Map[String, String]): PhraseRecord = {
+  def decodePhraseRecord(phraseRecord: Map[String, String]): PhraseRecord = {
     val id            = phraseRecord.get("id").flatMap(str => Try(str.toInt).toOption).getOrElse(-1)
     val phrase        = phraseRecord.get("phrase").map(str => decodePhrase(str)).getOrElse(decodePhrase("No such key in Redis"))
     val matchesNumber = phraseRecord.get("matchesNumber").flatMap(str => Try(str.toInt).toOption).getOrElse(-1)
