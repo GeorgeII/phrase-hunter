@@ -10,6 +10,8 @@ object StaticResourceResolver {
    */
   def getSubtitleDirectoryPath[F[_]: Applicative]: F[String] = Applicative[F].pure {
     val dataDir = sys.env.getOrElse("DATA_DIR", ".") + "/data/subtitles/"
+
+    // TODO: replace with logging
     println(s"The directory with subtitle files: $dataDir")
 
     dataDir

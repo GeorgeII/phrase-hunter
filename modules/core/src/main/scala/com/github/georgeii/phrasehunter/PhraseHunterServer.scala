@@ -7,7 +7,7 @@ import fs2.Stream
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
-import org.http4s.server.middleware.Logger
+import org.http4s.server.middleware.{ Logger => MiddlewareLogger }
 import com.github.georgeii.phrasehunter.routes.{ RecentHistoryRoutes, SearchRoutes }
 import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
 import com.github.georgeii.phrasehunter.util.{ FileReader, StaticResourceResolver }
@@ -16,10 +16,11 @@ import dev.profunktor.redis4cats.{ Redis, RedisCommands }
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
 import org.http4s.server.Router
+import org.typelevel.log4cats.Logger
 
 object PhraseHunterServer {
 
-  def stream[F[_]: Async]: Stream[F, Nothing] = {
+  def stream[F[_]: Async: Logger]: Stream[F, Nothing] = {
     val subtitleDirectory = StaticResourceResolver.getSubtitleDirectoryPath
     val subtitleFiles = for {
       sd    <- subtitleDirectory
@@ -46,7 +47,7 @@ object PhraseHunterServer {
       ).orNotFound
 
       // With Middlewares in place
-      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpRoutes)
+      finalHttpApp = MiddlewareLogger.httpApp(logHeaders = true, logBody = true)(httpRoutes)
 
       exitCode <- Stream.resource(
         EmberServerBuilder
