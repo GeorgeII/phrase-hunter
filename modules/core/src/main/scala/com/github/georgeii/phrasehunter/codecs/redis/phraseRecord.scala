@@ -2,9 +2,7 @@ package com.github.georgeii.phrasehunter.codecs.redis
 
 import com.github.georgeii.phrasehunter.codecs.redis.phrase.decodePhrase
 import com.github.georgeii.phrasehunter.models.PhraseRecord
-import com.github.georgeii.phrasehunter.models.phrase.Phrase
 import dev.profunktor.redis4cats.codecs.splits._
-import dev.profunktor.redis4cats.data.RedisCodec
 
 import java.sql.Timestamp
 import java.time.Instant
