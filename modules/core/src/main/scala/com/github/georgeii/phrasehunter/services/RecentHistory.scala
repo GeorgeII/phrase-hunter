@@ -10,6 +10,7 @@ import io.circe.Json
 import com.github.georgeii.phrasehunter.models.PhraseRecord
 import com.github.georgeii.phrasehunter.codecs.doobie.phraseRecord._
 import com.github.georgeii.phrasehunter.codecs.json.{ phraseRecord => phraseRecordJson }
+import org.typelevel.log4cats.Logger
 
 trait RecentHistory[F[_]] {
   def getAllRecent(n: Int = 10): F[List[PhraseRecord]]
@@ -18,11 +19,12 @@ trait RecentHistory[F[_]] {
 }
 
 object RecentHistory {
-  def make[F[_]: Sync](
+  def make[F[_]: Sync: Logger](
       postgresXa: Aux[F, Unit],
       redis: Resource[F, RedisCommands[F, String, String]]
   ): RecentHistory[F] =
     new RecentHistory[F] {
+
       override def getAllRecent(n: Int = 10): F[List[PhraseRecord]] =
         if (n <= 10) getAllRecentFromRedis(n, redis)
         else getAllRecentFromPostgres(n, postgresXa)
@@ -54,7 +56,7 @@ object RecentHistory {
           .transact(postgresXa)
     }
 
-  private def getAllRecentFromRedis[F[_]: Sync](
+  private def getAllRecentFromRedis[F[_]: Sync: Logger](
       n: Int,
       redis: Resource[F, RedisCommands[F, String, String]]
   ): F[List[PhraseRecord]] =
@@ -64,12 +66,12 @@ object RecentHistory {
         .map(_.reverse)
         .map(list => list.map(str => phraseRecordJson.decoder.decodeJson(parse(str).getOrElse(Json.Null))))
         .map(_.sequence)
-        .map {
-          case Right(list)           => list
+        .flatMap {
+          case Right(list) => list.pure[F]
           case Left(decodingFailure) =>
-            // TODO: logging
-            println(s"Failed to decode json from Redis. $decodingFailure")
-            List.empty[PhraseRecord]
+            for {
+              _ <- Logger[F].info(s"Failed to decode json from Redis. $decodingFailure")
+            } yield List.empty[PhraseRecord]
         }
     }
 
