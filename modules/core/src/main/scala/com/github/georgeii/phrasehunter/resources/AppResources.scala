@@ -1,5 +1,6 @@
 package com.github.georgeii.phrasehunter.resources
 
+import cats.Applicative
 import cats.effect.std.Console
 import cats.effect.{ Async, Resource }
 import cats.implicits._
@@ -16,14 +17,15 @@ import org.typelevel.log4cats.Logger
 
 sealed abstract class AppResources[F[_]](
     val postgres: Aux[F, Unit],
-    val redis: Resource[F, RedisCommands[F, String, String]]
+    val redis: Resource[F, RedisCommands[F, String, String]],
+    val subtitlesDirectory: String
 )
 
 object AppResources {
 
-  def make[F[_]: Async: Console: Logger: MkRedis: Network](
+  def make[F[_]: Async: Applicative: Console: Logger: MkRedis: Network](
       cfg: AppConfig
-  ): Resource[F, AppResources[F]] = {
+  ): F[AppResources[F]] = {
 
     def checkPostgresConnection(
         postgresXa: Aux[F, Unit]
@@ -45,25 +47,36 @@ object AppResources {
         }
       }
 
-    def mkPostgreSqlTransactor(c: PostgreSQLConfig): Aux[F, Unit] = {
+    def mkPostgreSqlTransactor(c: PostgreSQLConfig): F[Aux[F, Unit]] = {
       val xa = Transactor.fromDriverManager[F](
         driver = c.driver.value,                                                        // driver classname
         url = s"jdbc:postgresql://${c.host.value}:${c.port.value}/${c.database.value}", // connect URL (driver-specific)
         user = c.user.value,                                                            // user
         pass = c.password.value                                                         // password
       )
-      checkPostgresConnection(xa)
 
-      xa
+      for {
+        _ <- checkPostgresConnection(xa)
+      } yield xa
     }
 
     def mkRedisResource(c: RedisConfig): Resource[F, RedisCommands[F, String, String]] =
       Redis[F].utf8(c.uri.value).evalTap(checkRedisConnection)
 
-    (
-      mkPostgreSqlTransactor(cfg.postgreSQL),
-      mkRedisResource(cfg.redis)
-    ).parMapN((postgres, redis) => new AppResources[F](postgres, redis) {})
+    /*
+     * @return ./data/subtitles for IDE run; /path/setAsAnEnvVar/inBuild.sbt/data/subtitles when run in Docker
+     */
+    def getSubtitleDirectoryPath(c: SubtitleDirConfig): F[String] =
+      for {
+        dirPath <- (sys.env.getOrElse(c.envVariableName, ".") + c.subdirectoryLayout).pure[F]
+        _       <- Logger[F].info(s"The directory with subtitle files: $dirPath")
+      } yield dirPath
+
+    for {
+      psqlXa  <- mkPostgreSqlTransactor(cfg.postgreSQL)
+      redis   <- mkRedisResource(cfg.redis).pure[F]
+      dirPath <- getSubtitleDirectoryPath(cfg.subtitleDir)
+    } yield new AppResources[F](psqlXa, redis, dirPath) {}
   }
 
 }
