@@ -17,7 +17,7 @@ object Config {
     default[F].load
 
   private def default[F[_]]: ConfigValue[F, AppConfig] =
-    env("SC_POSTGRES_PASSWORD").as[NonEmptyString].secret.map { postgresPassword =>
+    env("SC_POSTGRES_PASSWORD").default("password").as[NonEmptyString].secret.map { postgresPassword =>
       AppConfig(
         PostgreSQLConfig(
           host = "postgres_container",
@@ -30,6 +30,10 @@ object Config {
         ),
         RedisConfig(
           uri = RedisURI("redis://redis")
+        ),
+        SubtitleDirConfig(
+          envVariableName = "DATA_DIR",
+          subdirectoryLayout = "/data/subtitles/"
         ),
         HttpClientConfig(
           timeout = 60.seconds,

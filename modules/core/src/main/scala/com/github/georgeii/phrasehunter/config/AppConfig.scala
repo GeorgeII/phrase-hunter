@@ -14,6 +14,7 @@ import AppConfig._
 case class AppConfig(
     postgreSQL: PostgreSQLConfig,
     redis: RedisConfig,
+    subtitleDir: SubtitleDirConfig,
     httpClientConfig: HttpClientConfig,
     httpServerConfig: HttpServerConfig
 )
@@ -32,6 +33,11 @@ object AppConfig {
 
   @newtype case class RedisURI(value: NonEmptyString)
   @newtype case class RedisConfig(uri: RedisURI)
+
+  case class SubtitleDirConfig(
+      envVariableName: NonEmptyString,
+      subdirectoryLayout: String
+  )
 
   case class HttpServerConfig(
       host: Host,
