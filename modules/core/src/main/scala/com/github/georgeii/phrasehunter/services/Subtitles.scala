@@ -1,23 +1,20 @@
 package com.github.georgeii.phrasehunter.services
 
-import cats.Applicative
+import cats.{ Applicative, Parallel }
 import cats.effect.{ Resource, Sync }
 import cats.implicits._
 import doobie.implicits._
 import doobie.util.transactor.Transactor.Aux
 import dev.profunktor.redis4cats.RedisCommands
 import io.circe.Json
-
 import com.github.georgeii.phrasehunter.models.phrase._
-import com.github.georgeii.phrasehunter.models.{ PhraseRecord, Subtitle, SubtitleOccurrenceDetails }
+import com.github.georgeii.phrasehunter.models.{ PhraseRecord, SubtitleOccurrenceDetails }
 import com.github.georgeii.phrasehunter.util.FileReader
-import com.github.georgeii.phrasehunter.util.TimeConverter
 import com.github.georgeii.phrasehunter.codecs.json.{ phraseRecord => phraseRecordJson }
+import org.typelevel.log4cats.Logger
 
-import java.io.File
 import java.sql.Timestamp
 import java.time.Instant
-import scala.util.Try
 
 trait Subtitles[F[_]] {
   def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]]
@@ -25,65 +22,37 @@ trait Subtitles[F[_]] {
 }
 
 object Subtitles {
-  def make[F[_]: Sync](
+  def make[F[_]: Sync: Parallel: Logger](
       postgresXa: Aux[F, Unit],
       redis: Resource[F, RedisCommands[F, String, String]],
-      subtitleStorage: F[List[File]]
+      subtitlesDirectory: String
   ): Subtitles[F] =
     new Subtitles[F] {
 
       override def findAll(phrase: Phrase): F[List[SubtitleOccurrenceDetails]] =
-        subtitleStorage.map { filesList =>
-          filesList
-            .map { file =>
-              val fileResource        = FileReader.makeSubtitleFileResource[F](file)
-              val filenameNoExtension = FileReader.getNameNoExtension(file)
+        for {
+          filesList <- FileReader.getAllFilesInDirectory[F](subtitlesDirectory)
+          foundOccurrences <- filesList.parFlatTraverse { file =>
+            val fileResource        = FileReader.makeSubtitleFileResource[F](file)
+            val filenameNoExtension = FileReader.getNameNoExtension(file)
 
-              fileResource.use { bufferedSource =>
-                Applicative[F].pure(findOccurrencesInFile(phrase, bufferedSource.mkString, filenameNoExtension))
-              }
+            fileResource.use { bufferedSource =>
+              Applicative[F].pure(
+                FileReader.findOccurrencesInFile(phrase, bufferedSource.mkString, filenameNoExtension)
+              )
             }
-            .sequence
-            .map(_.flatten)
-        }.flatten
+          }
+        } yield foundOccurrences
 
       override def create(phrase: Phrase, matchesNumber: Int): F[Int] =
         for {
           id     <- createInPostgres(phrase, matchesNumber, postgresXa)
+          _      <- Logger[F].info(s"Phrase info stored in database by id $id")
           record <- Applicative[F].pure(PhraseRecord(id, phrase, matchesNumber, Timestamp.from(Instant.now())))
           _      <- createInRedis(record, redis)
+          _      <- Logger[F].info("Phrase info cached into Redis")
         } yield id
     }
-
-  def extractInfoFromSubtitle(subtitle: String): Either[Throwable, Subtitle] = {
-    val metaInfo = subtitle.split("\r\n")
-
-    Try {
-      Subtitle(metaInfo(0).toInt, metaInfo(1), metaInfo.drop(2).mkString(" "))
-    }.toEither
-  }
-
-  def findOccurrencesInFile(
-      phrase: Phrase,
-      text: String,
-      filename: String
-  ): List[SubtitleOccurrenceDetails] = {
-    val separateSubtitles = text.split("\r\n\r\n")
-
-    val subtitlesThatContainPhrase = separateSubtitles.view
-      .map(sub => extractInfoFromSubtitle(sub))
-      .filter(_.isRight)
-      .map(_.toOption.get)
-      .filter(_.text.toLowerCase.contains(phrase.toString.toLowerCase))
-      .map { sub =>
-        val (startMillis, endMillis) = TimeConverter.extractStartEndTimestamps(sub.timestamp)
-
-        SubtitleOccurrenceDetails(filename, sub.number, startMillis, endMillis, sub.text)
-      }
-      .toList
-
-    subtitlesThatContainPhrase
-  }
 
   def createInPostgres[F[_]: Sync](
       phrase: Phrase,
