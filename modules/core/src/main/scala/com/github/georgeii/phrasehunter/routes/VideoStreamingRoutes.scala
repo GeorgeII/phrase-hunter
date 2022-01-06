@@ -12,7 +12,7 @@ import org.http4s.headers.Range.SubRange
 import org.http4s.server.Router
 import org.typelevel.ci.CIString
 
-import java.io.{ File, InputStream }
+import java.io.{ File, RandomAccessFile }
 
 final case class VideoStreamingRoutes[F[_]: Async: Concurrent]() extends Http4sDsl[F] {
 
@@ -52,15 +52,30 @@ final case class VideoStreamingRoutes[F[_]: Async: Concurrent]() extends Http4sD
         end = end
       )
 
+      // 25mb
+      val maxBytesToSend = 26_214_400
+      val anotherEnd     = if (file.length - start > maxBytesToSend) start + maxBytesToSend else file.length
+
+      val buffer = if (file.length - start > maxBytesToSend) maxBytesToSend.toLong else file.length - start
+
+      val bytes = Array.ofDim[Byte](buffer.toInt)
+
+      val raf = new RandomAccessFile(filePath, "r")
+      raf.seek(start)
+      val bytesRead = raf.read(bytes, 0, buffer.toInt)
+      val readChunk = bytes.take(bytesRead)
+
+//      new RandomAccessFile(filePath, "r").read(bytes, start.toInt, maxBytesToSend)
+
 //      val inputStream: InputStream = scala.io.Source.fromResource(filePath).openStream()
 
-      Ok(fileStream)
+      Ok(readChunk)
         .map(_.withStatus(Status.PartialContent))
         .map(response =>
           response.putHeaders(
             `Content-Type`(MediaType.video.mp4),
-            `Content-Length`(end - start),
-            `Content-Range`(SubRange(start, end)),
+            `Content-Length`(anotherEnd - start),
+            `Content-Range`(SubRange(start, anotherEnd), Option(file.length)),
             `Accept-Ranges`.bytes,
             `Cache-Control`(CacheDirective.`no-store`)
           )
