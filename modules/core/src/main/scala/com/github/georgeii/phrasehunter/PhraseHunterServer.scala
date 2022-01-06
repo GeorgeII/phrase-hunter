@@ -8,7 +8,7 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.{ Logger => MiddlewareLogger }
-import com.github.georgeii.phrasehunter.routes.{ RecentHistoryRoutes, SearchRoutes }
+import com.github.georgeii.phrasehunter.routes.{ IndexRoutes, RecentHistoryRoutes, SearchRoutes, VideoStreamingRoutes }
 import com.github.georgeii.phrasehunter.services.{ RecentHistory, Subtitles }
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
@@ -22,9 +22,13 @@ object PhraseHunterServer {
   ): Stream[F, Nothing] = {
 
     val publicRoutes = SearchRoutes(subtitlesService).routes <+>
-          RecentHistoryRoutes(recentHistoryService).routes
+          RecentHistoryRoutes(recentHistoryService).routes <+>
+          VideoStreamingRoutes().routes
+
+    val staticPages = IndexRoutes().routes
 
     val httpRoutes = Router(
+      "/"               -> staticPages,
       routes.version.v1 -> publicRoutes
     ).orNotFound
 
