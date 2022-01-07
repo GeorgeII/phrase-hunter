@@ -6,15 +6,13 @@ import cats.effect.Async
 import cats.implicits._
 import cats.effect.kernel.Concurrent
 import cats.implicits.toFunctorOps
-import com.github.georgeii.phrasehunter.services.{ VideoChunk, VideoStreaming }
-import org.http4s.{ CacheDirective, Header, HttpRoutes, MediaType, Response, Status }
+import com.github.georgeii.phrasehunter.services.VideoStreaming
+import org.http4s.{ CacheDirective, Header, HttpRoutes, MediaType, Status }
 import org.http4s.headers._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Range.SubRange
 import org.http4s.server.Router
 import org.typelevel.ci.CIString
-
-import java.io.{ File, RandomAccessFile }
 
 final case class VideoStreamingRoutes[F[_]: Async: Concurrent: Applicative](
     videos: VideoStreaming[F]
@@ -26,8 +24,6 @@ final case class VideoStreamingRoutes[F[_]: Async: Concurrent: Applicative](
 
     case request @ GET -> Root / videoFileName =>
       val rangeHeaders: Option[NonEmptyList[Header.Raw]] = request.headers.get(CIString("Range"))
-
-      val range: Option[Array[String]] = rangeHeaders.map(_.head.value.split("=")(1).split("-"))
 
       val maybeVideoChunk = for {
         rangeHead  <- rangeHeaders.map(_.head.value)
