@@ -3,6 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Phrase Hunter</title>
+
+    <style>
+        ul {
+            padding: 0;
+            list-style-type: none;
+            width: 1000px;
+            align-content: center;
+        }
+
+        li {
+            margin-bottom: 30px;
+        }
+
+        li:hover {
+            background-color: #ade8f4;
+        }
+
+        #list-box {
+            width: 1000px;
+            align-content: center;
+            left: 50%;
+        }
+    </style>
 </head>
 
 <body style="text-align: center;">
@@ -11,21 +34,83 @@
     Phrase Hunter
 </h1>
 
-<h2>
-    How to insert video
-    and play in HTML
-</h2>
+<form>
+    <label for="phrase">Enter a phrase to search:</label><br>
+    <input type="text" id="phrase" name="phrase"><br>
+    <input type="submit" value="Submit" onclick="return lookForPhrase()">
+    <span id='message'></span>
+</form>
 
-<p>
-    Adding Video on my Webpage
-</p>
+<div id="list-box">
+    <ul id="subtitle-list">
 
-    <video width="800px" height="800px" controls>
+    </ul>
+</div>
 
-        <source src="http://localhost:8080/v1/videos/Better-Call-Saul-S01e01-snippet#t=50" type="video/mp4" autoplay="autoplay">
 
-        Your browser does not support the video tag.
-    </video>
+<video width="800px" height="800px" controls>
+
+    <source src="http://localhost:8080/v1/videos/Better-Call-Saul-S01e01-snippet#t=50" type="video/mp4" autoplay="autoplay">
+
+    Your browser does not support the video tag.
+</video>
+
+
+<script>
+    function lookForPhrase() {
+        document.getElementById("message").innerHTML = ""
+        document.getElementById('subtitle-list').innerHTML = ""
+        // document.getElementById('history-list').innerHTML = ""
+
+        const url = "http://localhost:8080/v1/search"
+        const payload = {
+            phrase : document.getElementById("phrase").value
+        };
+        const other_params = {
+            headers : { "content-type" : "application/json; charset=UTF-8" },
+            body : JSON.stringify(payload),
+            method : "POST",
+            mode : "cors"
+        };
+
+        fetch(url, other_params)
+            .then(response => {
+                if (response.ok) {
+                    return response.json()
+                } else {
+                    throw new Error("Could not reach the API: " + response.statusText);
+                }
+            })
+            .then(data => drawResponse(data))
+            .catch(error => console.log(error.message));
+
+        return false;
+    }
+
+    function drawResponse(subtitles) {
+        if (subtitles.length == 0) {
+            document.getElementById("message").innerHTML = "The phrase wasn't found in the video library."
+            return
+        }
+
+        console.log(subtitles)
+        const list = document.getElementById('subtitle-list');
+        list.innerHTML = ""
+
+        for (let i = 0; i < subtitles.length; i++) {
+            const li = document.createElement('li');
+            const textnode = document.createTextNode("Text: " + subtitles[i].text + "\nVideo name: " + subtitles[i].name);
+            li.appendChild(textnode);
+            list.appendChild(li);
+        }
+
+
+
+
+    }
+
+</script>
+
 </body>
 
 </html>
