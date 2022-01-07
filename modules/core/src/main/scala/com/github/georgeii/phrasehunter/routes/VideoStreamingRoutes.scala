@@ -1,11 +1,13 @@
 package com.github.georgeii.phrasehunter.routes
 
-import cats.data.NonEmptyList
+import cats.Applicative
+import cats.data.{ NonEmptyList, OptionT }
 import cats.effect.Async
+import cats.implicits._
 import cats.effect.kernel.Concurrent
 import cats.implicits.toFunctorOps
-import fs2.io.file.{ Files, Path => fs2Path }
-import org.http4s.{ CacheDirective, Header, HttpRoutes, MediaType, StaticFile, Status, TransferCoding }
+import com.github.georgeii.phrasehunter.services.{ VideoChunk, VideoStreaming }
+import org.http4s.{ CacheDirective, Header, HttpRoutes, MediaType, Response, Status }
 import org.http4s.headers._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Range.SubRange
@@ -14,48 +16,42 @@ import org.typelevel.ci.CIString
 
 import java.io.{ File, RandomAccessFile }
 
-final case class VideoStreamingRoutes[F[_]: Async: Concurrent]() extends Http4sDsl[F] {
+final case class VideoStreamingRoutes[F[_]: Async: Concurrent: Applicative](
+    videos: VideoStreaming[F]
+) extends Http4sDsl[F] {
 
   private[routes] val prefixPath = "/videos"
 
-  object OptionalVideoStartTimeParameterMatcher extends OptionalQueryParamDecoderMatcher[Long]("startFrom")
-
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
 
-    case request @ GET -> Root / videoFileName :? OptionalVideoStartTimeParameterMatcher(startFrom) =>
-      val filePath   = "./data/videos/" + videoFileName.replaceAll("%20", " ")
-      val file       = new File(filePath)
-      val fileLength = file.length()
+    case request @ GET -> Root / videoFileName =>
+      val rangeHeaders: Option[NonEmptyList[Header.Raw]] = request.headers.get(CIString("Range"))
 
-      val rangeHeader: Option[NonEmptyList[Header.Raw]] = request.headers.get(CIString("Range"))
-      val range: Option[Array[String]]                  = rangeHeader.map(_.head.value.split("=")(1).split("-"))
+      val range: Option[Array[String]] = rangeHeaders.map(_.head.value.split("=")(1).split("-"))
 
-      val start: Long = range.map(_.head.toLong).getOrElse(0L)
-      val end: Long   = range.map(ran => if (ran.length > 1) ran(1).toLong else fileLength).getOrElse(fileLength)
+      val maybeVideoChunk = for {
+        rangeHead  <- rangeHeaders.map(_.head.value)
+        videoChunk <- Option(videos.getVideoChunk(videoFileName, rangeHead))
+      } yield videoChunk
 
-      println(start)
-      println(end)
-
-      val chunkSize = 1024 * 64
-
-      val fileStream = Files[F].readRange(
-        path = fs2Path(filePath),
-        chunkSize = chunkSize,
-        start = start,
-        end = end
-      )
-
-      Ok(fileStream)
-        .map(_.withStatus(Status.PartialContent))
-        .map(response =>
-          response.putHeaders(
-            `Content-Type`(MediaType.video.mp4),
-            `Content-Length`(end - start),
-            `Content-Range`(SubRange(start, end), Option(file.length)),
-            `Accept-Ranges`.bytes,
-            `Cache-Control`(CacheDirective.`no-store`)
+      val maybeSuccessResponse = for {
+        videoChunk <- OptionT(maybeVideoChunk.sequence)
+      } yield {
+        Ok(videoChunk.bytes)
+          .map(_.withStatus(Status.PartialContent))
+          .map(response =>
+            response.putHeaders(
+              `Content-Type`(MediaType.video.mp4),
+              `Content-Length`(videoChunk.endPos - videoChunk.startPos),
+              `Content-Range`(SubRange(videoChunk.startPos, videoChunk.endPos), Option(videoChunk.fileLength)),
+              `Accept-Ranges`.bytes,
+              `Cache-Control`(CacheDirective.`no-store`)
+            )
           )
-        )
+      }
+
+      maybeSuccessResponse.getOrElse(BadRequest("No header 'Range' was passed.")).flatten
+
   }
 
   val routes: HttpRoutes[F] = Router(
