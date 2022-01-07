@@ -18,7 +18,8 @@ import org.typelevel.log4cats.Logger
 sealed abstract class AppResources[F[_]](
     val postgres: Aux[F, Unit],
     val redis: Resource[F, RedisCommands[F, String, String]],
-    val subtitlesDirectory: String
+    val subtitlesDirectory: String,
+    val videoDirectory: String
 )
 
 object AppResources {
@@ -72,11 +73,21 @@ object AppResources {
         _       <- Logger[F].info(s"The directory with subtitle files: $dirPath")
       } yield dirPath
 
+    /*
+     * @return ./data/videos for IDE run; /path/setAsAnEnvVar/inBuild.sbt/data/videos when run in Docker
+     */
+    def getVideoDirectoryPath(c: VideoConfig): F[String] =
+      for {
+        dirPath <- (sys.env.getOrElse(c.envVariableName, ".") + c.subdirectoryLayout).pure[F]
+        _       <- Logger[F].info(s"The directory with video files: $dirPath")
+      } yield dirPath
+
     for {
-      psqlXa  <- mkPostgreSqlTransactor(cfg.postgreSQL)
-      redis   <- mkRedisResource(cfg.redis).pure[F]
-      dirPath <- getSubtitleDirectoryPath(cfg.subtitleDir)
-    } yield new AppResources[F](psqlXa, redis, dirPath) {}
+      psqlXa    <- mkPostgreSqlTransactor(cfg.postgreSQL)
+      redis     <- mkRedisResource(cfg.redis).pure[F]
+      dirPath   <- getSubtitleDirectoryPath(cfg.subtitleDir)
+      videoPath <- getVideoDirectoryPath(cfg.videoDir)
+    } yield new AppResources[F](psqlXa, redis, dirPath, videoPath) {}
   }
 
 }

@@ -15,6 +15,7 @@ case class AppConfig(
     postgreSQL: PostgreSQLConfig,
     redis: RedisConfig,
     subtitleDir: SubtitleDirConfig,
+    videoDir: VideoConfig,
     httpClientConfig: HttpClientConfig,
     httpServerConfig: HttpServerConfig
 )
@@ -37,6 +38,13 @@ object AppConfig {
   case class SubtitleDirConfig(
       envVariableName: NonEmptyString,
       subdirectoryLayout: String
+  )
+
+  case class VideoConfig(
+      envVariableName: NonEmptyString,
+      subdirectoryLayout: String,
+      filesExtension: String,
+      bufferSize: Int
   )
 
   case class HttpServerConfig(

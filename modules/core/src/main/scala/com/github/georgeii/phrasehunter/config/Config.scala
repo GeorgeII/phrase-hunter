@@ -20,7 +20,7 @@ object Config {
     env("SC_POSTGRES_PASSWORD").default("password").as[NonEmptyString].secret.map { postgresPassword =>
       AppConfig(
         PostgreSQLConfig(
-          host = "postgres_container",
+          host = "localhost",
           port = 5432,
           user = "postgres",
           password = postgresPassword,
@@ -29,11 +29,17 @@ object Config {
           max = 10
         ),
         RedisConfig(
-          uri = RedisURI("redis://redis")
+          uri = RedisURI("redis://localhost")
         ),
         SubtitleDirConfig(
           envVariableName = "DATA_DIR",
           subdirectoryLayout = "/data/subtitles/"
+        ),
+        VideoConfig(
+          envVariableName = "DATA_DIR",
+          subdirectoryLayout = "/data/videos/",
+          filesExtension = ".mp4",
+          bufferSize = 1024 * 1024 * 4
         ),
         HttpClientConfig(
           timeout = 60.seconds,
