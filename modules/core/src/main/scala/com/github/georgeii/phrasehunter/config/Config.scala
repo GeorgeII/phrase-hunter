@@ -20,7 +20,7 @@ object Config {
     env("SC_POSTGRES_PASSWORD").default("password").as[NonEmptyString].secret.map { postgresPassword =>
       AppConfig(
         PostgreSQLConfig(
-          host = "localhost",
+          host = "postgres_container",
           port = 5432,
           user = "postgres",
           password = postgresPassword,
@@ -29,7 +29,7 @@ object Config {
           max = 10
         ),
         RedisConfig(
-          uri = RedisURI("redis://localhost")
+          uri = RedisURI("redis://redis")
         ),
         SubtitleDirConfig(
           envVariableName = "DATA_DIR",
