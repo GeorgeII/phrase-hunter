@@ -19,9 +19,6 @@ final case class SearchRoutes[F[_]: Concurrent](
   private[routes] val prefixPath = "/search"
 
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root =>
-      Ok("I'm fine!")
-
     case req @ POST -> Root =>
       for {
         phrase         <- req.as[Phrase]
