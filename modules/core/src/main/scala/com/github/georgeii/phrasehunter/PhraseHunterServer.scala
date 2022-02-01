@@ -3,6 +3,7 @@ package com.github.georgeii.phrasehunter
 import cats.effect.{ Async, Resource }
 import cats.syntax.all._
 import com.github.georgeii.phrasehunter.config.AppConfig.HttpServerConfig
+import com.github.georgeii.phrasehunter.resources.AppResources
 import fs2.Stream
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
@@ -17,6 +18,7 @@ object PhraseHunterServer {
 
   def stream[F[_]: Async: Logger](
       cfg: HttpServerConfig,
+      resources: AppResources[F],
       subtitlesService: Subtitles[F],
       recentHistoryService: RecentHistory[F],
       videoService: VideoStreaming[F]
@@ -26,7 +28,7 @@ object PhraseHunterServer {
           RecentHistoryRoutes(recentHistoryService).routes <+>
           VideoStreamingRoutes(videoService).routes
 
-    val staticPages = IndexRoutes().routes
+    val staticPages = IndexRoutes(resources.assetsDirectory).routes
 
     val httpRoutes = Router(
       "/"               -> staticPages,

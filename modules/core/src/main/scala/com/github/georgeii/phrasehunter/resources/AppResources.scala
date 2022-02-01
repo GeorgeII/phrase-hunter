@@ -19,7 +19,8 @@ sealed abstract class AppResources[F[_]](
     val postgres: Aux[F, Unit],
     val redis: Resource[F, RedisCommands[F, String, String]],
     val subtitlesDirectory: String,
-    val videoDirectory: String
+    val videoDirectory: String,
+    val assetsDirectory: String
 )
 
 object AppResources {
@@ -82,12 +83,19 @@ object AppResources {
         _       <- Logger[F].info(s"The directory with video files: $dirPath")
       } yield dirPath
 
+    def getAssetDirectoryPath(c: AssetConfig): F[String] =
+      for {
+        dirPath <- (sys.env.getOrElse(c.envVariableName, ".") + c.subdirectoryLayout).pure[F]
+        _       <- Logger[F].info(s"The directory with assets: $dirPath")
+      } yield dirPath
+
     for {
-      psqlXa    <- mkPostgreSqlTransactor(cfg.postgreSQL)
-      redis     <- mkRedisResource(cfg.redis).pure[F]
-      dirPath   <- getSubtitleDirectoryPath(cfg.subtitleDir)
-      videoPath <- getVideoDirectoryPath(cfg.videoDir)
-    } yield new AppResources[F](psqlXa, redis, dirPath, videoPath) {}
+      psqlXa        <- mkPostgreSqlTransactor(cfg.postgreSQL)
+      redis         <- mkRedisResource(cfg.redis).pure[F]
+      subtitlesPath <- getSubtitleDirectoryPath(cfg.subtitleDir)
+      videoPath     <- getVideoDirectoryPath(cfg.videoDir)
+      assetsPath    <- getAssetDirectoryPath(cfg.assetsDir)
+    } yield new AppResources[F](psqlXa, redis, subtitlesPath, videoPath, assetsPath) {}
   }
 
 }

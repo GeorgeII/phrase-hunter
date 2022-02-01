@@ -16,6 +16,7 @@ case class AppConfig(
     redis: RedisConfig,
     subtitleDir: SubtitleDirConfig,
     videoDir: VideoConfig,
+    assetsDir: AssetConfig,
     httpClientConfig: HttpClientConfig,
     httpServerConfig: HttpServerConfig
 )
@@ -45,6 +46,11 @@ object AppConfig {
       subdirectoryLayout: String,
       filesExtension: String,
       bufferSize: Int
+  )
+
+  case class AssetConfig(
+      envVariableName: NonEmptyString,
+      subdirectoryLayout: String
   )
 
   case class HttpServerConfig(

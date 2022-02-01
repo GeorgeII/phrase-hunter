@@ -29,6 +29,7 @@ object Main extends IOApp {
       exitCode <- PhraseHunterServer
         .stream[IO](
           cfg = cfg.httpServerConfig,
+          resources = res,
           subtitlesService = subtitleService,
           recentHistoryService = historyService,
           videoService = videoService

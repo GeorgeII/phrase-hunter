@@ -41,6 +41,10 @@ object Config {
           filesExtension = ".mp4",
           bufferSize = 1024 * 1024 * 4
         ),
+        AssetConfig(
+          envVariableName = "ASSETS_DIR",
+          subdirectoryLayout = "/assets/"
+        ),
         HttpClientConfig(
           timeout = 60.seconds,
           idleTimeInPool = 30.seconds
