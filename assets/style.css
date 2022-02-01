@@ -1,0 +1,30 @@
+@charset "UTF-8";
+
+body {
+    text-align: center;
+}
+
+h1 {
+    color: green;
+}
+
+ul {
+    padding: 0;
+    list-style-type: none;
+    width: 1000px;
+    align-content: center;
+}
+
+li {
+    margin-bottom: 30px;
+}
+
+li:hover {
+    background-color: #ade8f4;
+}
+
+#list-box {
+    width: 1000px;
+    align-content: center;
+    left: 50%;
+}

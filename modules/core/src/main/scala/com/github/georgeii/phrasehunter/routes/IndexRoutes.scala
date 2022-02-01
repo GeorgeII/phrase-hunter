@@ -19,6 +19,15 @@ case class IndexRoutes[F[_]: Async: Concurrent](
         .fromPath(fs2Path(assetsDirectory + "index.html"), Option(request))
         .getOrElseF(NotFound()) // In case the file doesn't exist
 
+    case request @ GET -> Root / "style.css" =>
+      StaticFile
+        .fromPath(fs2Path(assetsDirectory + "style.css"), Option(request))
+        .getOrElseF(NotFound())
+
+    case request @ GET -> Root / "script.js" =>
+      StaticFile
+        .fromPath(fs2Path(assetsDirectory + "script.js"), Option(request))
+        .getOrElseF(NotFound())
   }
 
   val routes: HttpRoutes[F] = Router(
